@@ -1,4 +1,5 @@
 import pandas as pd
+from metrics import PerformanceMetrics
 
 class BacktestEngine:
     ''' Runs backtests (portfolio simulation, order execution, bookkeeping)
@@ -87,7 +88,13 @@ class BacktestEngine:
         self.df['Total_Value'] = portfolio_values
         final_return = ((portfolio_values[-1] - self.capital) / self.capital) * 100
 
+        # Risk metrics
+        sharpe_ratio = PerformanceMetrics.calculate_sharpe_ratio(portfolio_values)
+        max_drawdown = PerformanceMetrics.calculate_max_drawdown(portfolio_values)
+
         print("\n* BACKTEST RESULTS *")
         print(f"Initial Capital: ${self.capital:.2f}")
         print(f"Final Portfolio Value: ${portfolio_values[-1]:.2f}")
         print(f"Total Return: {final_return:.2f}%")
+        print(f"Annualised Sharpe Ratio: {sharpe_ratio:.2f}")
+        print(f"Maximum Drawdown: {max_drawdown:.2f}%")
