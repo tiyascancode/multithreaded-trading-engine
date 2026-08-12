@@ -10,13 +10,10 @@
 using namespace std; // Use the standard namespace 
 
 // Data structure for single daily bar/candle
+// Only date and close are stored to match Python code
 struct PriceBar {
-    string date; 
-    double open;
-    double high;
-    double low;
+    string date;
     double close;
-    long volume;
 };
 
 class CSVReader {

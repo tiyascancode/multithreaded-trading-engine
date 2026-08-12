@@ -14,24 +14,16 @@ vector<PriceBar> CSVReader::loadCSV(const string& filepath) {
     }
 
     string line;
-    string cell;
     getline(file, line); // Skip header line
     while (getline(file, line)) {
+        if (line.empty()) continue;
         stringstream lineStream(line);
         PriceBar bar;
+        string cell;
         getline(lineStream, bar.date, ',');
         getline(lineStream, cell, ',');
-        bar.open = stod(cell);
-        getline(lineStream, cell, ',');
-        bar.high = stod(cell);
-        getline(lineStream, cell, ',');
-        bar.low = stod(cell);
-        getline(lineStream, cell, ',');
+        if (cell.empty()) continue;
         bar.close = stod(cell);
-        getline(lineStream, cell, ','); // Skip adjusted close value
-        getline(lineStream, cell, ',');
-        bar.volume = stol(cell);
-
         bars.push_back(bar); // Add bar to the vector
     }
     file.close();
