@@ -3,7 +3,6 @@
    use #pragma once */
 #ifndef MARKETDATA_H // If not defined
 #define MARKETDATA_H // Define it
-#endif // End of ifndef
 
 #include <string>
 #include <vector>
@@ -24,5 +23,5 @@ class CSVReader {
     public:
         static vector<PriceBar> loadCSV(const string&filepath);
 };
-
+#endif // End of ifndef
 
