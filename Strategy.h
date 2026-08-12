@@ -1,6 +1,5 @@
 #ifndef STRATEGY_H
 #define STRATEGY_H
-#endif
 
 #include <vector>
 #include "MarketData.h"
@@ -23,3 +22,4 @@ class MovingAverageCrossover {
         vector<double> calculateSMA(const vector<double>& prices, int window) const; // Cannot modify variables 
         vector<Signal> generateSignals(const vector<PriceBar>& bars) const; // Generates position signals based on SMA crossovers
 };
+#endif

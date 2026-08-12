@@ -1,6 +1,5 @@
 #ifndef METRICS_H
 #define METRICS_H
-#endif
 
 #include <vector>
 
@@ -16,3 +15,4 @@ class PerformanceMetrics {
         // Calculates Maximum Drawdown from largest peak between lowest value and highest value in portfolio total equity values.
         static double calculateMaxDrawdown(const vector<double>& portfolio_values);
 };
+#endif
