@@ -6,7 +6,7 @@ if __name__ == "__main__":
     print("Initialising Encapsulated Backtest Run...")
 
     # 1. Instantiate reusable execution engine
-    start = time.perf_counter() # Start timing from here
+    start = time.perf_counter() # Time loading, simulation and performance metrics
     engine = BacktestEngine(csv_file="aapl_data_2023-01-01_to_2026-06-01.csv", initial_capital=10000.0, fee_rate=0.001, slippage_percentage=0.0005, verbose=False)
 
     # 2. Instantiate isolated strategy

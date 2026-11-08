@@ -12,14 +12,34 @@ int main() {
     string filepath = "aapl_data_2023-01-01_to_2026-06-01.csv";
     cout << "Loading market data from " << filepath << "...\n";
 
-    auto start = chrono::high_resolution_clock::now(); // Start clock for timing how long C++ takes
+    auto start = chrono::steady_clock::now(); // Time loading, simulation and performance metrics
 
     vector<PriceBar> data = CSVReader::loadCSV(filepath); // Calls CSVReader class to loop through file and create PriceBar for each row.
-    cout << "Loaded " << data.size() << " price bars.\n";
+
+    if (data.empty()) {
+        cerr << "No market data available for backtest.\n";
+        return 1;
+    }
 
     // Generate signals using Moving Average Crossover strategy
     MovingAverageCrossover strategy(10, 30);
     vector<Signal> signals = strategy.generateSignals(data);
+
+    // Run backtest using BacktestEngine
+    BacktestEngine engine(10000.0, 0.001, 0.0005); // Initial capital $10,000, fee rate 0.1%, slippage 0.05%
+    vector<Trade> trades;
+    vector<double> strategy_equity = engine.runBacktest(data, signals, trades);
+
+    // Calculate STrategy performance metrics
+    double strategy_sharpe_ratio = PerformanceMetrics::calculateSharpeRatio(strategy_equity);
+    double strategy_max_drawdown = PerformanceMetrics::calculateMaxDrawdown(strategy_equity);
+    double final_strategy_value = strategy_equity.back();
+    double strategy_total_return = (final_strategy_value - 10000.0) / 10000.0 * 100.0;
+
+    auto end = chrono::steady_clock::now();
+    chrono::duration<double, std::micro> elapsed = end - start;
+    cout << "\nC++ execution time: " << elapsed.count() << " microseconds";
+    cout << "\nLoaded " << data.size() << " price bars.\n";
 
     int buy_count = 0;
     int sell_count = 0;
@@ -34,26 +54,8 @@ int main() {
         }
     }
 
-    // Run backtest using BacktestEngine
-    BacktestEngine engine(10000.0, 0.001, 0.0005); // Initial capital $10,000, fee rate 0.1%, slippage 0.05%
-    vector<Trade> trades;
-    vector<double> strategy_equity = engine.runBacktest(data, signals, trades);
-
-    auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, std::micro> elapsed = end - start;
-    cout << "\nC++ execution time: " << elapsed.count() << " microseconds";
-
-    if (!data.empty()) {
-        cout << "\nLoaded " << data.size() << " price bars. \n";
-    }
-
     cout << "\nTotal buy signals: " << buy_count << "\n";
     cout << "Total sell signals: " << sell_count << "\n";
-
-    // Calculate STrategy performance metrics
-    double strategy_sharpe_ratio = PerformanceMetrics::calculateSharpeRatio(strategy_equity);
-    double strategy_max_drawdown = PerformanceMetrics::calculateMaxDrawdown(strategy_equity);
-    double final_strategy_value = strategy_equity.back();
 
     // Calculate metrics on Buy-and-Hold strategy - buy all shares at the start and just hold onto them
     // vector<double> close_prices;
@@ -71,7 +73,7 @@ int main() {
     cout << "=====================================\n";
     cout << "Initial capital:        $10,000.00\n";
     cout << "Final strategy equity: " << final_strategy_value << "\n"; // Monetary value of portfolio at end of backtest
-    cout << "Strategy total return: " << (final_strategy_value - 10000.0) / 10000.0 * 100.0 << "\n";
+    cout << "Strategy total return: " << strategy_total_return << "\n";
     cout << "Total trades executed: " << trades.size() << "\n";
     cout << "-------------------------------------\n";
     cout << "Strategy Sharpe Ratio: " << strategy_sharpe_ratio << "\n";
