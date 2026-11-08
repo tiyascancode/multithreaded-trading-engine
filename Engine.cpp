@@ -35,7 +35,7 @@ vector<double> BacktestEngine::runBacktest(const vector<PriceBar>& bars, const v
                             raw_stock_cost = shares_to_buy * execution_price;
                             transaction_fee = raw_stock_cost * fee_rate;
                             shares_held += shares_to_buy;
-                            cash -= (raw_stock_cost * transaction_fee);
+                            cash -= (raw_stock_cost + transaction_fee);
                         }
                     }
                     if (shares_to_buy > 0) {
