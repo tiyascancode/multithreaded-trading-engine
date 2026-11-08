@@ -6,8 +6,8 @@ using namespace std;
 
 MovingAverageCrossover::MovingAverageCrossover(int short_window, int long_window)
     : short_window(short_window), long_window(long_window) {
-        if (short_window >= long_window) {
-            throw invalid_argument("Short window must be strictly less than long window.");
+        if (short_window <= 0 || long_window <= 0 || short_window >= long_window) {
+            throw invalid_argument("Windows must be positive, with short window strictly less than long window.");
         }
     }
 vector<double> MovingAverageCrossover::calculateSMA(const vector<double>& prices, int window) const {

@@ -21,24 +21,22 @@ vector<double> BacktestEngine::runBacktest(const vector<PriceBar>& bars, const v
         if (signals[i] == Signal::BUY) {
             double execution_price = current_price * (1.0 + slippage); // Adjust for slippage
             if (cash >= execution_price) {
-                long long shares_to_buy = static_cast<long long>(cash / execution_price);
+                // Include fees when calculating how many whole shares we can afford
+                long long shares_to_buy = static_cast<long long>(cash / (execution_price * (1.0 + fee_rate)));
                 if (shares_to_buy > 0) {
                     double raw_stock_cost = shares_to_buy * execution_price;
                     double transaction_fee = raw_stock_cost * fee_rate;
                     double total_cost = raw_stock_cost + transaction_fee;
-                    if (cash >= total_cost) {
-                        shares_held += shares_to_buy;
-                        cash -= total_cost;
-                    } else {
-                        shares_to_buy -= 1; // Buy one less share if fee brings total cost too high
-                        if (shares_to_buy > 0) {
-                            raw_stock_cost = shares_to_buy * execution_price;
-                            transaction_fee = raw_stock_cost * fee_rate;
-                            shares_held += shares_to_buy;
-                            cash -= (raw_stock_cost + transaction_fee);
-                        }
+                    // Account for rounding at the affordability boundary
+                    while (shares_to_buy > 0 && total_cost > cash) {
+                        shares_to_buy -= 1;
+                        raw_stock_cost = shares_to_buy * execution_price;
+                        transaction_fee = raw_stock_cost * fee_rate;
+                        total_cost = raw_stock_cost + transaction_fee;
                     }
                     if (shares_to_buy > 0) {
+                        shares_held += shares_to_buy;
+                        cash -= total_cost;
                         trades.push_back({bars[i].date, "BUY", execution_price, static_cast<double>(shares_to_buy), raw_stock_cost, transaction_fee});
                     }
                 }

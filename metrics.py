@@ -6,6 +6,8 @@ class PerformanceMetrics:
     @staticmethod
     def calculate_sharpe_ratio(portfolio_values, risk_free_rate=0.0, periods_per_year=252):
         '''Calculates annualised Sharpe Ratio based on daily portfolio returns.'''
+        if len(portfolio_values) < 3:
+            return 0.0 # Need at least 2 returns for sample standard deviation
         equity_series = pd.Series(portfolio_values)
         daily_returns = equity_series.pct_change().dropna() # Vectorised operation applied to whole data list
         if daily_returns.std() == 0:
@@ -22,6 +24,8 @@ class PerformanceMetrics:
     @staticmethod
     def calculate_max_drawdown(portfolio_values):
         '''Calculates Max Drawdown (MDD) percentage from largest peak-to-trough drop in value of investment portfolio.'''
+        if not len(portfolio_values):
+            return 0.0
         equity_series = pd.Series(portfolio_values)
         running_max = equity_series.cummax() # Rolling peak across timeline, another vectorised operation
         drawdowns = (equity_series - running_max) / running_max # Percentage drawdown from rolling peak

@@ -8,7 +8,7 @@ using namespace std;
 double PerformanceMetrics::calculateSharpeRatio(const vector<double>& portfolio_values,
                                                 double risk_free_rate,
                                                 int periods_per_year) {
-    if (portfolio_values.size() < 2) return 0.0; // Need at least 2 daily equity values to calculate percentage return
+    if (portfolio_values.size() < 3) return 0.0; // Need at least 2 returns for sample standard deviation
 
     // Calculate daily percentage returns
     vector<double> daily_returns;

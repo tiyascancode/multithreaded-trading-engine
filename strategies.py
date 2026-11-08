@@ -6,6 +6,8 @@ class MovingAverageCrossStrategy:
     ''' Simple Moving Average (SMA) Crossover Strategy - Buy when fast SMA crosses above slow SMA,
         sell when fast SMA crosses below slow SMA.'''
     def __init__(self, short_window=10, long_window=30):
+        if short_window <= 0 or long_window <= 0 or short_window >= long_window:
+            raise ValueError('Windows must be positive, with short window strictly less than long window.')
         self.short_window = short_window
         self.long_window = long_window
 

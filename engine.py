@@ -15,6 +15,7 @@ class BacktestEngine:
         self.slippage_percentage = slippage_percentage
         self.verbose = verbose
         self.df = None
+        self.trades = []
 
     def load_data(self):
         if self.verbose:
@@ -23,6 +24,7 @@ class BacktestEngine:
         self.df = self.df.sort_values('Date').reset_index(drop=True)
 
     def run_simulation(self, strategy):
+        self.trades = []
         self.load_data()
         if self.verbose:
             print("Running strategy simulation...\n")
@@ -45,8 +47,8 @@ class BacktestEngine:
                 execution_price = current_price * (1 + self.slippage_percentage)
 
                 if cash >= execution_price:
-                    # Determine how many shares we can afford
-                    shares_to_buy = int(cash // execution_price)
+                    # Include fees when calculating how many whole shares we can afford
+                    shares_to_buy = int(cash / (execution_price * (1 + self.fee_rate)))
 
                     if shares_to_buy > 0:
                         raw_stock_cost = shares_to_buy * execution_price
@@ -55,19 +57,17 @@ class BacktestEngine:
                         # Overall cost includes transaction fee
                         total_cost = raw_stock_cost + transaction_fee
 
-                        # Check we can still afford shares with fee included
-                        if cash >= total_cost:
+                        # Account for rounding at the affordability boundary
+                        while shares_to_buy > 0 and total_cost > cash:
+                            shares_to_buy -= 1
+                            raw_stock_cost = shares_to_buy * execution_price
+                            transaction_fee = raw_stock_cost * self.fee_rate
+                            total_cost = raw_stock_cost + transaction_fee
+                        if shares_to_buy > 0:
                             shares_held += shares_to_buy
                             cash -= total_cost
-                        else:
-                            # Buy one less share if fee brings total cost too high
-                            shares_to_buy -= 1
-                            if shares_to_buy > 0:
-                                raw_stock_cost = shares_to_buy * execution_price
-                                transaction_fee = raw_stock_cost * self.fee_rate
-                                shares_held += shares_to_buy
-                                cash -= (raw_stock_cost + transaction_fee)
-                        if self.verbose:
+                            self.trades.append((row['Date'], 'BUY', execution_price, shares_to_buy, raw_stock_cost, transaction_fee))
+                        if self.verbose and shares_to_buy > 0:
                             stock_value = shares_held * current_price
                             total_equity = cash + stock_value
                             print(f"{row['Date']} | BUY {shares_to_buy} shares at ${current_price:.2f} | Execution price: ${execution_price:.2f} | Fee: ${transaction_fee:.2f}| Cash: ${cash:.2f} | Stock Value: ${stock_value:.2f} | Total Equity: ${total_equity:.2f}\n")
@@ -83,6 +83,7 @@ class BacktestEngine:
                 # Cash gained is revenue minus the transaction fee
                 net_cash_gained = raw_sale_revenue - transaction_fee
                 cash += net_cash_gained
+                self.trades.append((row['Date'], 'SELL', execution_price, shares_held, raw_sale_revenue, transaction_fee))
                 if self.verbose:
                     total_equity = cash # shares_held is about to be 0
                     print(f"{row['Date']} | SELL {shares_held} shares at ${current_price:.2f} | Execution price: ${execution_price:.2f} | Fee: ${transaction_fee:.2f} | Cash: ${cash:.2f} | Total Equity: ${total_equity:.2f}\n")
@@ -91,7 +92,8 @@ class BacktestEngine:
             portfolio_values.append(cash + (shares_held * current_price))
 
         self.df['Total_Value'] = portfolio_values
-        final_return = ((portfolio_values[-1] - self.capital) / self.capital) * 100
+        final_value = portfolio_values[-1] if portfolio_values else self.capital
+        final_return = ((final_value - self.capital) / self.capital) * 100
 
         # Risk metrics
         sharpe_ratio = PerformanceMetrics.calculate_sharpe_ratio(portfolio_values)
@@ -100,7 +102,11 @@ class BacktestEngine:
         if self.verbose:
             print("\n* BACKTEST RESULTS *")
             print(f"Initial Capital: ${self.capital:.2f}")
-            print(f"Final Portfolio Value: ${portfolio_values[-1]:.2f}")
+            print(f"Final Portfolio Value: ${final_value:.2f}")
             print(f"Total Return: {final_return:.2f}%")
             print(f"Annualised Sharpe Ratio: {sharpe_ratio:.2f}")
             print(f"Maximum Drawdown: {max_drawdown:.2f}%")
+
+        return {'equity': portfolio_values, 'trades': self.trades,
+                'return': final_return, 'sharpe': sharpe_ratio, 'drawdown': max_drawdown}
+
